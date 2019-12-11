@@ -1,0 +1,10 @@
+<div class="wrap">
+    <div class="game">
+        <app-card *ngFor="let card of Game.cards"
+            #card.name
+            [data]="card"
+            (onCardClick)="Game.handleCardClick($event)">
+        </app-card>
+    </div>
+</div><!-- End Wrap -->
+    

@@ -1,0 +1,10 @@
+<div class="container">
+    <p textWrap="true" class="h2 description-label">Input A Number!</p>
+    <input matRipple [(ngModel)]="textFieldValue" type="number" placeholder="Input A Number..." (keyup.enter)="onButtonTap()">
+    <div class="label-div">
+        <p class="small" [style.color]="correct ? 'green' : 'red'">{{ outputMessage }}</p>
+        <p class="small">Forsøg: {{ tries }}</p>
+    </div>
+    <button (click)="onButtonTap()">Make a guess</button>
+    <button [hidden]="!correct" (click)="reset()">Reset</button>
+</div>
