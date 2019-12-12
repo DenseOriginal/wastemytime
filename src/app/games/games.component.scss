@@ -1,0 +1,39 @@
+@mixin width($max) {
+  @media (max-width: $max) {
+    @content;
+  }
+}
+
+.gamesCollection {
+  width: 75%;
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+
+  mat-card {
+    width: fit-content;
+    @include width(500px) {
+        width: 100%;
+    }
+    margin: 5px;
+    text-align: center;
+
+    mat-card-header {
+        width: fit-content;
+        margin: 0 auto;
+    }
+
+    button {
+      width: 100%;
+    }
+  }
+}
+
+header {
+  width: fit-content;
+  margin: 0 auto;
+  text-align: center;
+  margin-bottom: 30px;
+}
