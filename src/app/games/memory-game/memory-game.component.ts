@@ -1,6 +1,7 @@
-import { Component, OnInit, } from '@angular/core';
+import { Component, OnInit, Inject } from '@angular/core';
 import { ICard } from 'src/app/shared/interfaces';
 import { CardComponent } from './card.component';
+import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 
 @Component({
 	selector: 'app-memory-game',
@@ -70,17 +71,23 @@ export class MemoryGameComponent implements OnInit {
 			id: 12
 		},
 	];
+	
+	constructor(public dialog: MatDialog) { }
 
 	Game = {
 		paused: false,
 		temp: <CardComponent>null,
 		matchedPairs: <number>0,
 		cards: <ICard[]>[...this.cards_, ...this.cards_],
+		finished: <boolean>false,
+		parent: this,
 
 		start: function () {
 			this.shuffle(this.cards);
 			this.paused = false;
 			this.temp = undefined;
+			this.finished = true;
+			console.log('dsfdf');
 		},
 
 		// Fisher--Yates Algorithm -- https://bost.ocks.org/mike/shuffle/
@@ -120,14 +127,54 @@ export class MemoryGameComponent implements OnInit {
 					this.temp = e;
 				}
 			}
-			if (this.matchedPairs === this.cards.length/2) { console.log('hurray'); }
+			if (this.matchedPairs === this.cards.length / 2) { this.finished = true }
+		},
+
+		win: function () {
+			const modalRef = this.parent.dialog.open(CongratsModal, {
+				width: '250px',
+				data: {  }
+			});
+			modalRef.afterClosed().subscribe(result => {
+				let doReset = result.restart;
+				console.log('The dialog was closed', doReset);
+				if(doReset) { this.start() }
+			});
+		},
+
+		reset: function () {
+			this.start();
 		}
 	}
 
-	constructor() { }
-
 	ngOnInit() {
 		this.Game.start();
+	}
+
+}
+
+
+/// MODAL COMPONENT ///
+@Component({
+	selector: 'null',
+	template: `
+	<h1 mat-dialog-title>Congrats</h1>
+	<p>Do you want to play again?</p>
+	<div mat-dialog-actions>
+		<button mat-button (click)="onNoClick()">No Thanks</button>
+		<button mat-button [mat-dialog-close]="{ restart: true }" cdkFocusInitial>Ok</button>
+	</div>
+	`,
+})
+export class CongratsModal {
+
+	constructor(
+		public dialogRef: MatDialogRef<CongratsModal>,
+		@Inject(MAT_DIALOG_DATA) public data
+	) { }
+
+	onNoClick(): void {
+		this.dialogRef.close();
 	}
 
 }
