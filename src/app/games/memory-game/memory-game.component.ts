@@ -1,14 +1,15 @@
-import { Component, OnInit, Inject } from '@angular/core';
+import { Component, OnInit, AfterViewInit, Inject, QueryList, ViewChildren } from '@angular/core';
 import { ICard } from 'src/app/shared/interfaces';
 import { CardComponent } from './card.component';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
 	selector: 'app-memory-game',
 	templateUrl: './memory-game.component.html',
 	styleUrls: ['./memory-game.component.scss']
 })
-export class MemoryGameComponent implements OnInit {
+export class MemoryGameComponent implements OnInit, AfterViewInit {
 	cards_: ICard[] = [
 		{
 			name: "php",
@@ -71,8 +72,12 @@ export class MemoryGameComponent implements OnInit {
 			id: 12
 		},
 	];
-	
-	constructor(public dialog: MatDialog) { }
+
+	constructor(
+		public dialog: MatDialog,
+		private _snack: MatSnackBar
+	) { }
+	@ViewChildren(CardComponent) MemoryCards: QueryList<CardComponent>;
 
 	Game = {
 		paused: false,
@@ -83,11 +88,14 @@ export class MemoryGameComponent implements OnInit {
 		parent: this,
 
 		start: function () {
-			this.shuffle(this.cards);
-			this.paused = false;
-			this.temp = undefined;
-			this.finished = true;
-			console.log('dsfdf');
+			this.flipCards();
+			setTimeout(() => {
+				this.shuffle(this.cards);
+				this.paused = false;
+				this.temp = undefined;
+				this.finished = false;
+				this.matchedPairs = 0;
+			}, 500);
 		},
 
 		// Fisher--Yates Algorithm -- https://bost.ocks.org/mike/shuffle/
@@ -106,7 +114,7 @@ export class MemoryGameComponent implements OnInit {
 		},
 
 		handleCardClick: function (e: CardComponent) {
-			if (!this.paused) {
+			if (!this.paused && !this.finished) {
 				e.isPicked = true;
 				if (this.temp) { // If another card is already drawn, check if the two cards match
 					if (this.temp.data.id === e.data.id) { // if the two cards is a match
@@ -127,28 +135,45 @@ export class MemoryGameComponent implements OnInit {
 					this.temp = e;
 				}
 			}
-			if (this.matchedPairs === this.cards.length / 2) { this.finished = true }
+			if (this.matchedPairs === this.cards.length / 2) { this.win() }
 		},
 
 		win: function () {
-			const modalRef = this.parent.dialog.open(CongratsModal, {
-				width: '250px',
-				data: {  }
-			});
-			modalRef.afterClosed().subscribe(result => {
-				let doReset = result.restart;
-				console.log('The dialog was closed', doReset);
-				if(doReset) { this.start() }
-			});
+			this.finished = true;
+			let modalRef;
+			setTimeout(() => {
+				modalRef = this.parent.dialog.open(CongratsModal, {
+					width: '250px',
+					data: {}
+				});
+
+				modalRef.afterClosed().subscribe(result => {
+					let doReset = result.restart;
+					console.log('The dialog was closed', doReset);
+					if (doReset) { this.reset() }
+				});
+			}, 500);
 		},
 
 		reset: function () {
-			this.start();
-		}
+			setTimeout(() => {
+				this.start();
+			}, 250);
+		},
+
+		flipCards: function () { }
 	}
 
 	ngOnInit() {
-		this.Game.start();
+		setTimeout(() => {
+			this.Game.start();
+		}, 2000);
+	}
+
+	ngAfterViewInit() {
+		this.Game.flipCards = () => {
+			this.MemoryCards.forEach(Card => { Card.isPicked = Card.isMatched = false })
+		}
 	}
 
 }
@@ -156,15 +181,20 @@ export class MemoryGameComponent implements OnInit {
 
 /// MODAL COMPONENT ///
 @Component({
-	selector: 'null',
+	selector: 'CongatsModal',
 	template: `
-	<h1 mat-dialog-title>Congrats</h1>
+	<h1 mat-dialog-title>Congrats, You Won!</h1>
 	<p>Do you want to play again?</p>
+	<br>
 	<div mat-dialog-actions>
-		<button mat-button (click)="onNoClick()">No Thanks</button>
-		<button mat-button [mat-dialog-close]="{ restart: true }" cdkFocusInitial>Ok</button>
+		<button mat-raised-button [mat-dialog-close]="{ restart: false }">No Thanks</button>
+		<button mat-raised-button color="primary" [mat-dialog-close]="{ restart: true }" cdkFocusInitial>Sure</button>
 	</div>
 	`,
+	styles: [
+		'h1 {margin-bottom: 10px}',
+		'button {width: 48%}'
+	],
 })
 export class CongratsModal {
 
@@ -172,9 +202,4 @@ export class CongratsModal {
 		public dialogRef: MatDialogRef<CongratsModal>,
 		@Inject(MAT_DIALOG_DATA) public data
 	) { }
-
-	onNoClick(): void {
-		this.dialogRef.close();
-	}
-
 }

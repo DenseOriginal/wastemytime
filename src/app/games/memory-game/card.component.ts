@@ -20,7 +20,7 @@ export class CardComponent implements OnInit {
   @Input() data: ICard;
   @Output() onCardClick = new EventEmitter<this>();
   extraClass: string;
-  isPicked = false;
+  isPicked = true;
   isMatched = false;
 
   cardClicked() {
